@@ -1,0 +1,25 @@
+import pandas as pd
+from pandas.errors import ParserError
+
+def clean_data(file_path):
+    try:
+        df = pd.read_csv(file_path)
+        df.dropna(inplace=True)
+        df.drop_duplicates(inplace=True)
+        df.to_csv(file_path, index=False)
+        
+        print(f"Data cleaning for {file_path} is complete.")
+    
+    except ParserError as e:
+        print(f"Error occurred while parsing {file_path}: {str(e)}")
+        print("Skipping this file due to parsing errors.")
+
+    except Exception as e:
+        print(f"Error occurred while cleaning {file_path}: {str(e)}")
+        print("Skipping this file due to other errors.")
+
+radial_velocity_file = "/Users/cameronsouza/Desktop/Radial_Method"
+transit_file = "/Users/cameronsouza/Desktop/Transit_Method"
+
+clean_data(radial_velocity_file)
+clean_data(transit_file)
