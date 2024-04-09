@@ -1,0 +1,125 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from scipy.stats import ttest_ind, chi2_contingency
+
+def clean_data(file_path):
+    try:
+        df = pd.read_csv(file_path)
+        df.dropna(inplace=True)
+        df.drop_duplicates(inplace=True)
+        df.to_csv(file_path, index=False)
+        print(f"Data cleaning for {file_path} is complete.")
+        return df
+    except Exception as e:
+        print(f"Error occurred while cleaning {file_path}: {str(e)}")
+        return None
+
+# Load and clean the dataset
+file_path = '/Users/kennethjenkins/Downloads/new_planetary_systems - planetary_systems.csv'
+df = clean_data(file_path)
+
+# Define function to perform a t-test and print the result
+def test_hypothesis(group1, group2, column, hypothesis):
+    stat, p = ttest_ind(group1[column].dropna(), group2[column].dropna())
+    print(f"Hypothesis: {hypothesis}")
+    print(f"t-statistic: {stat}, p-value: {p}")
+    if p < 0.05:
+        print("Result: The hypothesis is supported by the data.\n")
+    else:
+        print("Result: The hypothesis is not supported by the data.\n")
+
+# Define function to perform a chi-squared test and print the result
+def test_categorical_hypothesis(group1, group2, column, hypothesis):
+    contingency_table = pd.crosstab(group1[column], group2[column])
+    stat, p, dof, expected = chi2_contingency(contingency_table)
+    print(f"Hypothesis: {hypothesis}")
+    print(f"Chi-squared statistic: {stat}, p-value: {p}")
+    if p < 0.05:
+        print("Result: The hypothesis is supported by the data.\n")
+    else:
+        print("Result: The hypothesis is not supported by the data.\n")
+
+# Split the data into two groups based on the discovery method
+transit = df[df['discoverymethod'] == 'Transit']
+radial_velocity = df[df['discoverymethod'] == 'Radial Velocity']
+
+# Test each hypothesis
+test_hypothesis(transit, radial_velocity, 'st_met', 'Stars with higher metallicity are more likely to host exoplanets detected by the transit method compared to the radial velocity method.')
+test_hypothesis(transit, radial_velocity, 'st_teff', 'Stars hosting exoplanets detected by the transit method have a higher average effective temperature compared to those detected by the radial velocity method.')
+test_hypothesis(transit, radial_velocity, 'st_rad', 'Stars hosting exoplanets detected by the transit method have a larger average radius compared to those detected by the radial velocity method.')
+test_hypothesis(transit, radial_velocity, 'st_logg', 'Stars with higher surface gravity tend to host exoplanets detected more frequently by the radial velocity method than by the transit method.')
+test_hypothesis(transit, radial_velocity, 'st_mass', 'Stars hosting exoplanets detected by the radial velocity method have a higher average mass compared to those detected by the transit method.')
+test_hypothesis(transit, radial_velocity, 'sy_dist', 'Stars hosting exoplanets detected by the transit method are closer to Earth compared to those detected by the radial velocity method.')
+test_hypothesis(transit, radial_velocity, 'sy_vmag', 'Stars hosting exoplanets detected by the transit method have a different average V magnitude compared to those detected by the radial velocity method.')
+test_hypothesis(transit, radial_velocity, 'sy_kmag', 'Stars hosting exoplanets detected by the transit method have a different average Ks magnitude compared to those detected by the radial velocity method.')
+test_hypothesis(transit, radial_velocity, 'sy_gaiamag', 'Stars hosting exoplanets detected by the transit method have a different average Gaia magnitude compared to those detected by the radial velocity method.')
+
+# Visualize Metallicity and Detection Method (Histogram)
+transit['st_met'].plot(kind='hist', alpha=0.5, label='Transit')
+radial_velocity['st_met'].plot(kind='hist', alpha=0.5, label='Radial Velocity')
+plt.xlabel('Stellar Metallicity')
+plt.ylabel('Frequency')
+plt.legend()
+plt.title('Distribution of Stellar Metallicity by Detection Method')
+plt.show()
+
+# Visualize Effective Temperature and Detection Method (Boxplot)
+plt.boxplot([transit['st_teff'].dropna(), radial_velocity['st_teff'].dropna()], labels=['Transit', 'Radial Velocity'])
+plt.ylabel('Stellar Effective Temperature (K)')
+plt.title('Boxplot of Stellar Effective Temperature by Detection Method')
+plt.show()
+
+# Visualize Stellar Radius and Detection Method (Density Plot)
+transit['st_rad'].plot(kind='density', label='Transit')
+radial_velocity['st_rad'].plot(kind='density', label='Radial Velocity')
+plt.xlabel('Stellar Radius (Solar Radius)')
+plt.title('Density Plot of Stellar Radius by Detection Method')
+plt.legend()
+plt.show()
+
+# Visualize Surface Gravity and Detection Method (Scatter Plot)
+plt.scatter(transit['st_logg'], range(len(transit['st_logg'])), label='Transit', alpha=0.5)
+plt.scatter(radial_velocity['st_logg'], range(len(radial_velocity['st_logg'])), label='Radial Velocity', alpha=0.5)
+plt.xlabel('Stellar Surface Gravity (log10(cm/s^2))')
+plt.title('Scatter Plot of Stellar Surface Gravity by Detection Method')
+plt.legend()
+plt.show()
+
+# Visualize Stellar Mass and Detection Method (Box Plot)
+plt.figure(figsize=(8, 6))
+plt.boxplot([transit['st_mass'].dropna(), radial_velocity['st_mass'].dropna()], labels=['Transit', 'Radial Velocity'])
+plt.xlabel('Detection Method')
+plt.ylabel('Stellar Mass (Solar Mass)')
+plt.title('Box Plot of Stellar Mass by Detection Method')
+plt.grid(False)
+plt.show()
+
+# Visualize Distance and Detection Method (Histogram)
+transit['sy_dist'].plot(kind='hist', alpha=0.5, label='Transit')
+radial_velocity['sy_dist'].plot(kind='hist', alpha=0.5, label='Radial Velocity')
+plt.xlabel('Distance (pc)')
+plt.ylabel('Frequency')
+plt.legend()
+plt.title('Distribution of Distance by Detection Method')
+plt.show()
+
+# Visualize V Magnitude and Detection Method (Box Plot)
+plt.figure(figsize=(8, 6))
+plt.boxplot([transit['sy_vmag'].dropna(), radial_velocity['sy_vmag'].dropna()], labels=['Transit', 'Radial Velocity'])
+plt.ylabel('V Magnitude')
+plt.title('Box Plot of V Magnitude by Detection Method')
+plt.show()
+
+# Visualize Ks Magnitude and Detection Method (Box Plot)
+plt.figure(figsize=(8, 6))
+plt.boxplot([transit['sy_kmag'].dropna(), radial_velocity['sy_kmag'].dropna()], labels=['Transit', 'Radial Velocity'])
+plt.ylabel('Ks Magnitude')
+plt.title('Box Plot of Ks Magnitude by Detection Method')
+plt.show()
+
+# Visualize Gaia Magnitude and Detection Method (Box Plot)
+plt.figure(figsize=(8, 6))
+plt.boxplot([transit['sy_gaiamag'].dropna(), radial_velocity['sy_gaiamag'].dropna()], labels=['Transit', 'Radial Velocity'])
+plt.ylabel('Gaia Magnitude')
+plt.title('Box Plot of Gaia Magnitude by Detection Method')
+plt.show()
