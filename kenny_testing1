@@ -28,17 +28,6 @@ def test_hypothesis(group1, group2, column, hypothesis):
     else:
         print("Result: The hypothesis is not supported by the data.\n")
 
-# Define function to perform a chi-squared test and print the result
-def test_categorical_hypothesis(group1, group2, column, hypothesis):
-    contingency_table = pd.crosstab(group1[column], group2[column])
-    stat, p, dof, expected = chi2_contingency(contingency_table)
-    print(f"Hypothesis: {hypothesis}")
-    print(f"Chi-squared statistic: {stat}, p-value: {p}")
-    if p < 0.05:
-        print("Result: The hypothesis is supported by the data.\n")
-    else:
-        print("Result: The hypothesis is not supported by the data.\n")
-
 # Split the data into two groups based on the discovery method
 transit = df[df['discoverymethod'] == 'Transit']
 radial_velocity = df[df['discoverymethod'] == 'Radial Velocity']
