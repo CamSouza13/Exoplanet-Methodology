@@ -1,0 +1,36 @@
+Import pandas as pd
+def calculate_luminosity(df):
+    # Constants
+    Mbol_sun = 4.72  # Solar bolometric magnitude
+
+    # Bolometric Correction Values by Spectral Type
+    bc_values = {
+        'B': -2.0,
+        'A': -0.3,
+        'F': -0.15,
+        'G': -0.4,
+        'K': -0.8,
+        'M': -2.0
+    }
+
+    # Calculate absolute magnitude
+    df['Mv'] = df['sy_vmag'] - 5 * np.log10(df['sy_dist']/10)
+
+    # Apply bolometric correction
+    df['BC'] = df['st_spectype'].map(lambda x: bc_values.get(x[0], -0.4))  # default to G if not found
+    df['Mbol'] = df['Mv'] + df['BC']
+
+    # Calculate luminosity
+    df['Lstar'] = 10**((df['Mbol'] - Mbol_sun) / -2.5)
+
+    return df
+
+def calculate_habitable_zone(df):
+    # Calculate habitable zone inner and outer boundaries
+    df['ri'] = np.sqrt(df['Lstar'] / 1.1)
+    df['ro'] = np.sqrt(df['Lstar'] / 0.53)
+    return df
+
+# Calculate luminosity and habitable zones
+df = calculate_luminosity(df)
+df = calculate_habitable_zone(df)
