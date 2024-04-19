@@ -1,0 +1,191 @@
+import pandas as pd
+
+def load_and_filter_data(file_path):
+    # Load the dataset, attempting to handle parsing errors by skipping bad lines
+    try:
+        data = pd.read_csv(file_path, comment='#', on_bad_lines='skip')
+    except Exception as e:
+        print(f"Error loading data from {file_path}: {e}")
+        return pd.DataFrame()
+
+    # Filter for default parameters set and discovery method containing 'rv' for radial velocity
+    filter_method = 'rv' if 'radial_velocity' in file_path else 'transit'
+    filtered_data = data[(data['default_flag'] > 0) & (data['discoverymethod'].str.contains(filter_method, case=False))]
+
+    return filtered_data
+
+def analyze_data(df):
+    if df.empty:
+        return "No data to analyze."
+    # Analysis of planetary parameters in multi-star systems vs single star systems
+    df['multi_star'] = df['sy_snum'] > 1  # True if more than one star in the system
+
+    # Group data by multi_star status and calculate means for relevant columns
+    analysis = df.groupby('multi_star')[[
+        'pl_orbper', 'pl_orbsmax', 'pl_rade', 'pl_bmasse', 'pl_orbeccen', 'pl_eqt'
+    ]].mean().reset_index()
+
+    return analysis
+
+def main(data_path1, data_path2):
+    # Load and filter data for both datasets
+    dataset1 = load_and_filter_data(data_path1)
+    dataset2 = load_and_filter_data(data_path2)
+
+    # Analyze both datasets
+    analysis1 = analyze_data(dataset1)
+    analysis2 = analyze_data(dataset2)
+
+    # Output results
+    print("Analysis of Radial Velocity Method Data:")
+    print(analysis1)
+    print("\nAnalysis of Transit Method Data:")
+    print(analysis2)
+
+# File paths for the datasets
+data_path1 = '/Users/cameronsouza/Desktop/HES/StatModel/Project/radial_velocity_method.csv'
+data_path2 = '/Users/cameronsouza/Desktop/HES/StatModel/Project/transit_method.csv'
+
+main(data_path1, data_path2)
+
+
+Results: 
+Analysis of Radial Velocity Method Data:
+No data to analyze.
+
+Analysis of Transit Method Data:
+   multi_star  pl_orbper  pl_orbsmax   pl_rade   pl_bmasse  pl_orbeccen  \
+0       False  24.827234    0.117160  3.927843  338.642469      0.09329   
+1        True  32.778926    0.144273  7.613975  344.566497      0.08496   
+
+        pl_eqt  
+0  1031.704637  
+1  1175.270833 
+
+### Transit Method Data Analysis:
+
+#### **Single-Star Systems (multi_star = False):**
+   - **Orbital Period (pl_orbper):** Average is approximately 24.83 days.
+   - **Orbit Semi-Major Axis (pl_orbsmax):** Average is about 0.117 AU.
+   - **Planet Radius (pl_rade):** Average radius is roughly 3.93 Earth radii.
+   - **Planet Mass (pl_bmasse):** Average mass is around 338.64 Earth masses.
+   - **Eccentricity (pl_orbeccen):** Average eccentricity is about 0.093.
+   - **Equilibrium Temperature (pl_eqt):** Average temperature is about 1032 K.
+
+#### **Multi-Star Systems (multi_star = True):**
+   - **Orbital Period (pl_orbper):** Average is approximately 32.78 days.
+   - **Orbit Semi-Major Axis (pl_orbsmax):** Average is about 0.144 AU.
+   - **Planet Radius (pl_rade):** Average radius is roughly 7.61 Earth radii.
+   - **Planet Mass (pl_bmasse):** Average mass is around 344.57 Earth masses.
+   - **Eccentricity (pl_orbeccen):** Average eccentricity is about 0.085.
+   - **Equilibrium Temperature (pl_eqt):** Average temperature is about 1175 K.
+
+### Observations:
+- **Planet Characteristics**: Planets in multi-star systems tend to have larger radii and slightly higher masses on average.
+- **Orbital Characteristics**: The semi-major axis tends to be larger, which could suggest a need for a more extended orbit to maintain stability in a multi-star gravitational environment.
+- **Temperature**: Higher equilibrium temperatures in multi-star systems could indicate proximity to multiple heat sources or complex dynamics affecting planetary temperature.
+- **Eccentricity**: Slightly lower eccentricities in multi-star systems might suggest a dampening effect of multiple gravitational influences on orbital eccentricity.
+
+
+import pandas as pd
+
+def load_and_filter_data(file_path):
+    # Manually specify column names
+    column_names = ['pl_name', 'hostname', 'default_flag', 'sy_snum', 'sy_pnum', 'discoverymethod', 'disc_year', 'disc_facility', 'soltype', 'pl_controv_flag', 'pl_refname', 'pl_orbper', 'pl_orbpererr1', 'pl_orbpererr2', 'pl_orbperlim', 'pl_orbsmax', 'pl_orbsmaxerr1', 'pl_orbsmaxerr2', 'pl_orbsmaxlim', 'pl_rade', 'pl_radeerr1', 'pl_radeerr2', 'pl_radelim', 'pl_radj', 'pl_radjerr1', 'pl_radjerr2', 'pl_radjlim', 'pl_bmasse', 'pl_bmasseerr1', 'pl_bmasseerr2', 'pl_bmasselim', 'pl_bmassj', 'pl_bmassjerr1', 'pl_bmassjerr2', 'pl_bmassjlim', 'pl_bmassprov', 'pl_orbeccen', 'pl_orbeccenerr1', 'pl_orbeccenerr2', 'pl_orbeccenlim', 'pl_insol', 'pl_insolerr1', 'pl_insolerr2', 'pl_insollim', 'pl_eqt', 'pl_eqterr1', 'pl_eqterr2', 'pl_eqtlim', 'ttv_flag', 'st_refname', 'st_spectype', 'st_teff', 'st_tefferr1', 'st_tefferr2', 'st_tefflim', 'st_rad', 'st_raderr1', 'st_raderr2', 'st_radlim', 'st_mass', 'st_masserr1', 'st_masserr2', 'st_masslim', 'st_met', 'st_meterr1', 'st_meterr2', 'st_metlim', 'st_metratio', 'st_logg', 'st_loggerr1', 'st_loggerr2', 'st_logglim', 'sy_refname', 'rastr', 'ra', 'decstr', 'dec', 'sy_dist', 'sy_disterr1', 'sy_disterr2', 'sy_vmag', 'sy_vmagerr1', 'sy_vmagerr2', 'sy_kmag', 'sy_kmagerr1', 'sy_kmagerr2', 'sy_gaiamag', 'sy_gaiamagerr1', 'sy_gaiamagerr2', 'rowupdate', 'pl_pubdate', 'releasedate']
+    
+    # Load the dataset from an Excel file
+    try:
+        data = pd.read_excel(file_path, names=column_names, skiprows=100)  # Skip first 100 rows assuming header
+    except Exception as e:
+        print(f"Error loading data from {file_path}: {e}")
+        return pd.DataFrame()
+
+    # Filter for relevant data
+    filtered_data = data[data['pl_orbper'].notnull() & data['pl_orbsmax'].notnull()]  # Example criteria
+    
+    return filtered_data
+
+def analyze_data(df):
+    # Analysis of planetary parameters in multi-star systems vs single star systems
+    df['multi_star'] = df['sy_snum'] > 1  # True if more than one star in the system
+
+    # Group data by multi_star status and calculate means for relevant columns
+    analysis = df.groupby('multi_star')[[
+        'pl_orbper', 'pl_orbsmax', 'pl_rade', 'pl_bmasse', 'pl_orbeccen', 'pl_eqt'
+    ]].mean().reset_index()
+
+    return analysis
+
+def main():
+    # File path for the dataset
+    data_path = '/Users/cameronsouza/Desktop/radial_velocity_method.xlsx'
+
+    # Load and filter data for the dataset
+    dataset = load_and_filter_data(data_path)
+
+    # If the dataset is empty, no further analysis is performed
+    if dataset.empty:
+        return
+
+    # Analyze the dataset
+    analysis = analyze_data(dataset)
+
+    # Output results
+    if not analysis.empty:
+        print("Analysis of Radial Velocity Method Data:")
+        print(analysis)
+    else:
+        print("No data to analyze for Radial Velocity Method.")
+
+# Run the script
+main()
+
+
+# Analysis of Radial Velocity Method Data:
+   multi_star   pl_orbper  pl_orbsmax   pl_rade    pl_bmasse  pl_orbeccen  \
+0       False  1973.35992    2.140019  3.451294  1018.303853     0.217584   
+1        True  1369.95326    1.792218  4.301667   957.152061     0.243182   
+
+       pl_eqt  
+0  530.988506  
+1  357.000000  
+
+- **Multi-Star Systems (multi_star=True)**:
+  - Average Orbital Period (pl_orbper): 1369.95 days
+  - Average Orbital Semi-Major Axis (pl_orbsmax): 1.792 AU
+  - Average Planetary Radius (pl_rade): 4.30 Earth radii
+  - Average Planetary Mass (pl_bmasse): 957.15 Earth masses
+  - Average Orbital Eccentricity (pl_orbeccen): 0.243
+  - Average Equilibrium Temperature (pl_eqt): 357.00 Kelvin
+
+- **Single Star Systems (multi_star=False)**:
+  - Average Orbital Period (pl_orbper): 1973.36 days
+  - Average Orbital Semi-Major Axis (pl_orbsmax): 2.140 AU
+  - Average Planetary Radius (pl_rade): 3.45 Earth radii
+  - Average Planetary Mass (pl_bmasse): 1018.30 Earth masses
+  - Average Orbital Eccentricity (pl_orbeccen): 0.218
+  - Average Equilibrium Temperature (pl_eqt): 530.99 Kelvin
+
+1. **Orbital Period (pl_orbper)**:
+   - Multi-star systems have a shorter average orbital period (1369.95 days) compared to single-star systems (1973.36 days).
+   - This suggests that planets in multi-star systems orbit their host stars more rapidly than those in single-star systems.
+
+2. **Orbital Semi-Major Axis (pl_orbsmax)**:
+   - Multi-star systems have a smaller average orbital semi-major axis (1.792 AU) compared to single-star systems (2.140 AU).
+   - This indicates that planets in multi-star systems are generally closer to their host stars than those in single-star systems.
+
+3. **Planetary Radius (pl_rade)**:
+   - Multi-star systems have a slightly larger average planetary radius (4.30 Earth radii) compared to single-star systems (3.45 Earth radii).
+   - This difference in planetary radius may be influenced by various factors such as composition, age, and stellar irradiation.
+
+4. **Planetary Mass (pl_bmasse)**:
+   - Multi-star systems have a lower average planetary mass (957.15 Earth masses) compared to single-star systems (1018.30 Earth masses).
+   - This suggests that planets in multi-star systems may have undergone less accretion or have different formation mechanisms compared to those in single-star systems.
+
+5. **Orbital Eccentricity (pl_orbeccen)**:
+   - Multi-star systems have a slightly higher average orbital eccentricity (0.243) compared to single-star systems (0.218).
+   - This indicates that the orbits of planets in multi-star systems are more elliptical compared to those in single-star systems.
+
+6. **Equilibrium Temperature (pl_eqt)**:
+   - Multi-star systems have a lower average equilibrium temperature (357.00 Kelvin) compared to single-star systems (530.99 Kelvin).
+   - This suggests that planets in multi-star systems receive less stellar irradiation and may have cooler surface temperatures compared to those in single-star systems.
