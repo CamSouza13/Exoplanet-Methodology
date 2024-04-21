@@ -1,0 +1,98 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def load_and_filter_data(file_path):
+    # Handle parsing errors by skipping bad lines
+    try:
+        data = pd.read_csv(file_path, comment='#', on_bad_lines='skip')
+    except Exception as e:
+        print(f"Error loading data from {file_path}: {e}")
+        return pd.DataFrame()
+
+    filter_method = 'rv' if 'radial_velocity' in file_path else 'transit'
+    filtered_data = data[(data['default_flag'] > 0) & (data['discoverymethod'].str.contains(filter_method, case=False))]
+
+    return filtered_data
+
+def analyze_data(df):
+    # Multi-star systems vs single star systems
+    df['multi_star'] = df['sy_snum'] > 1  
+
+    analysis = df.groupby('multi_star')[[
+        'pl_orbper', 'pl_orbsmax', 'pl_rade', 'pl_bmasse', 'pl_orbeccen', 'pl_eqt'
+    ]].mean().reset_index()
+
+    return analysis
+
+def create_visuals(data_path):
+    # Load and filter data
+    dataset = load_and_filter_data(data_path)
+
+    if dataset.empty:
+        print("No data to analyze.")
+        return
+
+    analysis = analyze_data(dataset)
+
+    if analysis.empty:
+        print("No data to analyze.")
+        return
+
+    # Bar Chart comparing Orbital Periods
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x='multi_star', y='pl_orbper', data=analysis)
+    plt.title('Comparison of Orbital Periods between Multi-Star and Single-Star Systems')
+    plt.xlabel('Multi-Star System')
+    plt.ylabel('Average Orbital Period (days)')
+    plt.xticks([0, 1], ['Single-Star', 'Multi-Star'])
+    plt.show()
+
+    # Scatter Plot of Orbital Semi-Major Axis vs. Planetary Mass
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(x='pl_orbsmax', y='pl_bmasse', hue='multi_star', data=dataset)
+    plt.title('Scatter Plot of Orbital Semi-Major Axis vs. Planetary Mass')
+    plt.xlabel('Orbital Semi-Major Axis (AU)')
+    plt.ylabel('Planetary Mass (Earth Masses)')
+    plt.legend(title='Multi-Star System')
+    plt.show()
+
+    # Box Plot of Planetary Radius
+    plt.figure(figsize=(10, 6))
+    sns.boxplot(x='multi_star', y='pl_rade', data=dataset)
+    plt.title('Box Plot of Planetary Radius')
+    plt.xlabel('Multi-Star System')
+    plt.ylabel('Planetary Radius (Earth Radii)')
+    plt.xticks([0, 1], ['Single-Star', 'Multi-Star'])
+    plt.show()
+
+    # Histogram of Orbital Eccentricity
+    plt.figure(figsize=(10, 6))
+    sns.histplot(x='pl_orbeccen', hue='multi_star', data=dataset, kde=True)
+    plt.title('Histogram of Orbital Eccentricity')
+    plt.xlabel('Orbital Eccentricity')
+    plt.ylabel('Frequency')
+    plt.legend(title='Multi-Star System')
+    plt.show()
+
+    # Line Plot of Equilibrium Temperature over Discovery Year
+    plt.figure(figsize=(10, 6))
+    sns.lineplot(x='disc_year', y='pl_eqt', hue='multi_star', data=dataset)
+    plt.title('Line Plot of Equilibrium Temperature over Discovery Year')
+    plt.xlabel('Discovery Year')
+    plt.ylabel('Equilibrium Temperature (Kelvin)')
+    plt.legend(title='Multi-Star System')
+    plt.show()
+
+def main():
+    data_path1 = '/Users/cameronsouza/Desktop/HES/StatModel/Project/radial_velocity_method.csv'
+    data_path2 = '/Users/cameronsouza/Desktop/HES/StatModel/Project/transit_method.csv'
+
+    print("Visuals for Radial Velocity Method Data:")
+    create_visuals(data_path1)
+
+    print("\nVisuals for Transit Method Data:")
+    create_visuals(data_path2)
+
+if __name__ == "__main__":
+    main()
