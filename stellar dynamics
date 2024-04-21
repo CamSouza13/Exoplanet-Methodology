@@ -1,14 +1,13 @@
 import pandas as pd
 
 def load_and_filter_data(file_path):
-    # Load the dataset, attempting to handle parsing errors by skipping bad lines
+    #handle parsing errors by skipping bad lines
     try:
         data = pd.read_csv(file_path, comment='#', on_bad_lines='skip')
     except Exception as e:
         print(f"Error loading data from {file_path}: {e}")
         return pd.DataFrame()
 
-    # Filter for default parameters set and discovery method containing 'rv' for radial velocity
     filter_method = 'rv' if 'radial_velocity' in file_path else 'transit'
     filtered_data = data[(data['default_flag'] > 0) & (data['discoverymethod'].str.contains(filter_method, case=False))]
 
@@ -17,10 +16,9 @@ def load_and_filter_data(file_path):
 def analyze_data(df):
     if df.empty:
         return "No data to analyze."
-    # Analysis of planetary parameters in multi-star systems vs single star systems
+    #multi-star systems vs single star systems
     df['multi_star'] = df['sy_snum'] > 1  # True if more than one star in the system
 
-    # Group data by multi_star status and calculate means for relevant columns
     analysis = df.groupby('multi_star')[[
         'pl_orbper', 'pl_orbsmax', 'pl_rade', 'pl_bmasse', 'pl_orbeccen', 'pl_eqt'
     ]].mean().reset_index()
@@ -28,21 +26,17 @@ def analyze_data(df):
     return analysis
 
 def main(data_path1, data_path2):
-    # Load and filter data for both datasets
     dataset1 = load_and_filter_data(data_path1)
     dataset2 = load_and_filter_data(data_path2)
 
-    # Analyze both datasets
     analysis1 = analyze_data(dataset1)
     analysis2 = analyze_data(dataset2)
 
-    # Output results
     print("Analysis of Radial Velocity Method Data:")
     print(analysis1)
     print("\nAnalysis of Transit Method Data:")
     print(analysis2)
 
-# File paths for the datasets
 data_path1 = '/Users/cameronsouza/Desktop/HES/StatModel/Project/radial_velocity_method.csv'
 data_path2 = '/Users/cameronsouza/Desktop/HES/StatModel/Project/transit_method.csv'
 
@@ -90,26 +84,22 @@ Analysis of Transit Method Data:
 import pandas as pd
 
 def load_and_filter_data(file_path):
-    # Manually specify column names
     column_names = ['pl_name', 'hostname', 'default_flag', 'sy_snum', 'sy_pnum', 'discoverymethod', 'disc_year', 'disc_facility', 'soltype', 'pl_controv_flag', 'pl_refname', 'pl_orbper', 'pl_orbpererr1', 'pl_orbpererr2', 'pl_orbperlim', 'pl_orbsmax', 'pl_orbsmaxerr1', 'pl_orbsmaxerr2', 'pl_orbsmaxlim', 'pl_rade', 'pl_radeerr1', 'pl_radeerr2', 'pl_radelim', 'pl_radj', 'pl_radjerr1', 'pl_radjerr2', 'pl_radjlim', 'pl_bmasse', 'pl_bmasseerr1', 'pl_bmasseerr2', 'pl_bmasselim', 'pl_bmassj', 'pl_bmassjerr1', 'pl_bmassjerr2', 'pl_bmassjlim', 'pl_bmassprov', 'pl_orbeccen', 'pl_orbeccenerr1', 'pl_orbeccenerr2', 'pl_orbeccenlim', 'pl_insol', 'pl_insolerr1', 'pl_insolerr2', 'pl_insollim', 'pl_eqt', 'pl_eqterr1', 'pl_eqterr2', 'pl_eqtlim', 'ttv_flag', 'st_refname', 'st_spectype', 'st_teff', 'st_tefferr1', 'st_tefferr2', 'st_tefflim', 'st_rad', 'st_raderr1', 'st_raderr2', 'st_radlim', 'st_mass', 'st_masserr1', 'st_masserr2', 'st_masslim', 'st_met', 'st_meterr1', 'st_meterr2', 'st_metlim', 'st_metratio', 'st_logg', 'st_loggerr1', 'st_loggerr2', 'st_logglim', 'sy_refname', 'rastr', 'ra', 'decstr', 'dec', 'sy_dist', 'sy_disterr1', 'sy_disterr2', 'sy_vmag', 'sy_vmagerr1', 'sy_vmagerr2', 'sy_kmag', 'sy_kmagerr1', 'sy_kmagerr2', 'sy_gaiamag', 'sy_gaiamagerr1', 'sy_gaiamagerr2', 'rowupdate', 'pl_pubdate', 'releasedate']
     
-    # Load the dataset from an Excel file
     try:
         data = pd.read_excel(file_path, names=column_names, skiprows=100)  # Skip first 100 rows assuming header
     except Exception as e:
         print(f"Error loading data from {file_path}: {e}")
         return pd.DataFrame()
 
-    # Filter for relevant data
     filtered_data = data[data['pl_orbper'].notnull() & data['pl_orbsmax'].notnull()]  # Example criteria
     
     return filtered_data
 
 def analyze_data(df):
-    # Analysis of planetary parameters in multi-star systems vs single star systems
+    #multi-star systems vs single star systems
     df['multi_star'] = df['sy_snum'] > 1  # True if more than one star in the system
 
-    # Group data by multi_star status and calculate means for relevant columns
     analysis = df.groupby('multi_star')[[
         'pl_orbper', 'pl_orbsmax', 'pl_rade', 'pl_bmasse', 'pl_orbeccen', 'pl_eqt'
     ]].mean().reset_index()
@@ -117,27 +107,21 @@ def analyze_data(df):
     return analysis
 
 def main():
-    # File path for the dataset
     data_path = '/Users/cameronsouza/Desktop/radial_velocity_method.xlsx'
 
-    # Load and filter data for the dataset
     dataset = load_and_filter_data(data_path)
 
-    # If the dataset is empty, no further analysis is performed
     if dataset.empty:
         return
 
-    # Analyze the dataset
     analysis = analyze_data(dataset)
 
-    # Output results
     if not analysis.empty:
         print("Analysis of Radial Velocity Method Data:")
         print(analysis)
     else:
         print("No data to analyze for Radial Velocity Method.")
 
-# Run the script
 main()
 
 
