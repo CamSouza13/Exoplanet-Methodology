@@ -96,3 +96,44 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+#For radial velocity had to create new file type to clean the file 
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+file_path = '/Users/cameronsouza/Desktop/radial_velocity_method.xlsx'
+
+try:
+    # Adjust the header index 
+    df = pd.read_excel(file_path, header=0)  
+    print("Data loaded successfully:")
+    print(df.head())  
+except Exception as e:
+    print(f"An error occurred while loading the data: {e}")
+    df = None
+
+if df is not None:
+    if 'sy_snum' in df.columns:
+        df['sy_snum'] = pd.to_numeric(df['sy_snum'], errors='coerce')
+        df['is_multi_star'] = df['sy_snum'] > 1
+        
+        features = ['pl_orbper', 'pl_orbsmax', 'pl_rade', 'pl_bmasse', 'pl_orbeccen', 'pl_eqt']
+        for feature in features:
+            if feature in df.columns:
+                # Create plots
+                plt.figure(figsize=(10, 6))
+                sns.boxplot(x='is_multi_star', y=feature, data=df)
+                plt.title(f'Comparison of {feature} Between Multi-Star and Single-Star Systems')
+                plt.xlabel('Is Multi-Star System')
+                plt.ylabel(feature)
+                plt.show()
+            else:
+                print(f"Column {feature} not found in the data.")
+    else:
+        print("Column 'sy_snum' is not found. Check your data for the correct column indicating the number of stars.")
+else:
+    print("Data frame is empty. Check your file path and header row index.")
