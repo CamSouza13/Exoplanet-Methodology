@@ -1,0 +1,179 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import ttest_ind
+
+# Load and clean data
+def load_and_clean_data(file_path, filter_method):
+    try:
+        df = pd.read_csv(file_path, comment='#', on_bad_lines='skip')
+        df = df[(df['default_flag'] == 1) & (df['discoverymethod'].str.contains(filter_method, case=False)) & (df['soltype'] == 'Published Confirmed')]
+        return df
+    except Exception as e:
+        print(f"Error loading data from {file_path}: {e}")
+        return pd.DataFrame()
+
+# Analyze data and compute means for visualization
+def analyze_data_for_visualization(df, multi_star_flag, method_name):
+    if df.empty:
+        return "No data to analyze."
+    
+    df_filtered = df[df['sy_snum'] > 1] if multi_star_flag else df[df['sy_snum'] == 1]
+    print(f"Data points for {'multi-star' if multi_star_flag else 'single-star'} systems in {method_name} dataset: {len(df_filtered)}")
+    
+    mean_values = df_filtered.agg({
+        'pl_orbper': 'mean',
+        'pl_rade': 'mean',
+        'pl_bmasse': 'mean',
+        'sy_vmag': 'mean',
+        'sy_kmag': 'mean',
+        'sy_gaiamag': 'mean',
+        'sy_dist': 'mean',
+        'st_mass': 'mean',
+        'st_met': 'mean'
+    }).to_frame().T.rename(index={0: method_name})
+    
+    return mean_values
+
+# Descriptive statistics
+def descriptive_statistics(df):
+    if df.empty:
+        return "No data to analyze."
+    return df[['pl_orbper', 'pl_rade', 'pl_bmasse', 'sy_vmag', 'sy_kmag', 'sy_gaiamag', 'sy_dist', 'st_mass', 'st_met']].describe()
+
+# Visualize data
+def visualize_data(multi_analysis, single_analysis, method_name):
+    fig, axs = plt.subplots(1, 9, figsize=(45, 5))
+    parameters = ['pl_orbper', 'pl_rade', 'pl_bmasse', 'sy_vmag', 'sy_kmag', 'sy_gaiamag', 'sy_dist', 'st_mass', 'st_met']
+    
+    for i, param in enumerate(parameters):
+        ax = axs[i]
+        sns.barplot(x=["Single-Star", "Multi-Star"], y=[single_analysis[param][0], multi_analysis[param][0]], ax=ax)
+        ax.set_title(f'Mean {param} - {method_name}')
+        ax.set_ylabel('Average Value')
+    plt.tight_layout()
+    plt.show()
+
+def main():
+    rv_path = '/Users/kennethjenkins/Downloads/radial_velocity_method.csv'
+    transit_path = '/Users/kennethjenkins/Downloads/transit_method.csv'
+
+    # Load and clean data
+    rv_data = load_and_clean_data(rv_path, 'Radial Velocity')
+    transit_data = load_and_clean_data(transit_path, 'Transit')
+
+    # Analyze data
+    rv_multi_analysis = analyze_data_for_visualization(rv_data, True, 'Radial Velocity')
+    rv_single_analysis = analyze_data_for_visualization(rv_data, False, 'Radial Velocity')
+    transit_multi_analysis = analyze_data_for_visualization(transit_data, True, 'Transit')
+    transit_single_analysis = analyze_data_for_visualization(transit_data, False, 'Transit')
+  
+    # Descriptive statistics
+    print("\nDescriptive Statistics for Radial Velocity Multi-Star Systems:")
+    print(descriptive_statistics(rv_data[rv_data['sy_snum'] > 1]))
+    print("\nDescriptive Statistics for Transit Multi-Star Systems:")
+    print(descriptive_statistics(transit_data[transit_data['sy_snum'] > 1]))
+
+    # Print analysis results for Radial Velocity
+    print("\nRadial Velocity Method Analysis:")
+    print("Multi-Star Systems:")
+    print(rv_multi_analysis)
+    print("Single-Star Systems:")
+    print(rv_single_analysis)
+
+    # Print analysis results for Transit Method
+    print("\nTransit Method Analysis:")
+    print("Multi-Star Systems:")
+    print(transit_multi_analysis)
+    print("Single-Star Systems:")
+    print(transit_single_analysis)
+
+    
+    # Visualize data
+    print("\nVisualizing Radial Velocity Data:")
+    visualize_data(rv_multi_analysis, rv_single_analysis, 'Radial Velocity')
+    print("\nVisualizing Transit Data:")
+    visualize_data(transit_multi_analysis, transit_single_analysis, 'Transit') 
+
+
+if __name__ == "__main__":
+    main()
+
+
+## Part 2 of coding to complete the t-tests
+
+# Load and clean data
+def load_and_clean_data(file_path, filter_method):
+    try:
+        df = pd.read_csv(file_path, comment='#', on_bad_lines='skip')
+        df = df[(df['default_flag'] == 1) & (df['discoverymethod'].str.contains(filter_method, case=False)) & (df['soltype'] == 'Published Confirmed')]
+        return df
+    except Exception as e:
+        print(f"Error loading data from {file_path}: {e}")
+        return pd.DataFrame()
+
+# Analyze data and compute means for visualization
+def analyze_data_for_visualization(df, multi_star_flag, method_name):
+    if df.empty:
+        return "No data to analyze.", pd.DataFrame()
+    
+    df_filtered = df[df['sy_snum'] > 1] if multi_star_flag else df[df['sy_snum'] == 1]
+    print(f"Data points for {'multi-star' if multi_star_flag else 'single-star'} systems in {method_name} dataset: {len(df_filtered)}")
+    
+    mean_values = df_filtered.agg({
+        'pl_orbper': 'mean',
+        'pl_rade': 'mean',
+        'pl_bmasse': 'mean',
+        'sy_vmag': 'mean',
+        'sy_kmag': 'mean',
+        'sy_gaiamag': 'mean',
+        'sy_dist': 'mean',
+        'st_mass': 'mean',
+        'st_met': 'mean'
+    }).to_frame().T.rename(index={0: method_name})
+    
+    return mean_values, df_filtered
+
+# Function to perform t-tests
+def perform_t_tests(df_multi, df_single):
+    parameters = ['pl_orbper', 'pl_rade', 'pl_bmasse', 'sy_vmag', 'sy_kmag', 'sy_gaiamag', 'sy_dist', 'st_mass', 'st_met']
+    results = {}
+    for param in parameters:
+        if param in df_multi.columns and param in df_single.columns:
+            multi_values = df_multi[param].dropna()
+            single_values = df_single[param].dropna()
+            if len(multi_values) >= 2 and len(single_values) >= 2:
+                t_stat, p_val = ttest_ind(multi_values, single_values, equal_var=False)
+                results[param] = (t_stat, p_val)
+            else:
+                results[param] = ('Insufficient data', 'N/A')
+    return results
+
+def main():
+    rv_path = '/Users/kennethjenkins/Downloads/radial_velocity_method.csv'
+    transit_path = '/Users/kennethjenkins/Downloads/transit_method.csv'
+
+    # Load and clean data
+    rv_data = load_and_clean_data(rv_path, 'Radial Velocity')
+    transit_data = load_and_clean_data(transit_path, 'Transit')
+
+    # Analyze data
+    rv_multi_analysis, rv_multi_data = analyze_data_for_visualization(rv_data, True, 'Radial Velocity')
+    rv_single_analysis, rv_single_data = analyze_data_for_visualization(rv_data, False, 'Radial Velocity')
+    transit_multi_analysis, transit_multi_data = analyze_data_for_visualization(transit_data, True, 'Transit')
+    transit_single_analysis, transit_single_data = analyze_data_for_visualization(transit_data, False, 'Transit')
+
+    # Perform t-tests
+    rv_t_test_results = perform_t_tests(rv_multi_data, rv_single_data)
+    transit_t_test_results = perform_t_tests(transit_multi_data, transit_single_data)
+
+    print("\nT-test Results for Radial Velocity Method:")
+    for param, result in rv_t_test_results.items():
+        print(f"{param}: t-statistic = {result[0]}, p-value = {result[1]}")
+
+    print("\nT-test Results for Transit Method:")
+    for param, result in transit_t_test_results.items():
+        print(f"{param}: t-statistic = {result[0]}, p-value = {result[1]}")
+
+if __name__ == "__main__":
+    main()
